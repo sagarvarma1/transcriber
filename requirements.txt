@@ -1,0 +1,7 @@
+Flask==3.0.0
+python-dotenv==1.0.0
+openai-whisper==20231117
+torch==2.5.1
+soundfile==0.12.1
+numpy>=1.26.0
+Flask-Limiter==3.5.0

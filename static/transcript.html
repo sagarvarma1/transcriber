@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transcript</title>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FAF7F2',
+                        sage: '#8B9D83',
+                        navy: '#2C3E50',
+                        sand: '#E5DED6',
+                        rust: '#9B4B3F'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --cream: #FAF7F2;
+            --sage: #8B9D83;
+            --navy: #2C3E50;
+            --sand: #E5DED6;
+            --rust: #9B4B3F;
+        }
+
+        body {
+            font-family: 'Libre Baskerville', serif;
+            background-color: var(--cream);
+            color: var(--navy);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--cream);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--sand);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--sage);
+        }
+
+        .chat-message {
+            max-width: 85%;
+        }
+
+        .chat-container {
+            height: 400px;
+            border: 1px solid var(--sand);
+            background-color: white;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            margin: 0 1px;
+            background-color: currentColor;
+            animation: blink 1s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        .input-field {
+            border: 1px solid var(--sand);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--sage);
+            box-shadow: 0 0 0 3px rgba(139, 157, 131, 0.2);
+        }
+
+        .send-button {
+            background-color: var(--sage);
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            background-color: #7A8B73;
+            transform: translateY(-1px);
+        }
+
+        .transcript-card {
+            background-color: white;
+            border: 1px solid var(--sand);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: var(--sage);
+            color: white;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            font-family: 'Libre Baskerville', serif;
+        }
+
+        .back-button:hover {
+            background-color: #7A8B73;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <h1 id="transcriptTitle" class="text-3xl font-bold mb-8 text-center">Loading...</h1>
+
+        <div id="transcriptContent" class="transcript-card rounded-xl p-8 shadow-md">
+            <div class="whitespace-pre-wrap text-lg leading-relaxed"></div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="bg-white rounded-xl shadow-md border border-sand overflow-hidden">
+            <div class="border-b border-sand p-4">
+                <h2 class="text-xl font-bold">Chat with Your Notes</h2>
+            </div>
+            
+            <div id="chatMessages" class="chat-container p-4 space-y-4 overflow-y-auto">
+                <!-- Messages will be inserted here -->
+            </div>
+
+            <div class="border-t border-sand p-4">
+                <form id="chatForm" class="flex gap-2">
+                    <input type="text" 
+                           id="messageInput" 
+                           class="input-field flex-1 rounded-lg px-4 py-2" 
+                           placeholder="Type your message..."
+                           required>
+                    <button type="submit" 
+                            class="send-button text-white px-6 py-2 rounded-lg">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="flex justify-center">
+            <a href="/" class="back-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Recordings
+            </a>
+        </div>
+    </div>
+
+    <script>
+        async function loadTranscript() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const timestamp = urlParams.get('timestamp');
+            
+            if (!timestamp) {
+                console.error('No timestamp provided');
+                return;
+            }
+            
+            try {
+                // Load the title
+                const titleResponse = await fetch(`/recording_title/${timestamp}`);
+                const titleData = await titleResponse.json();
+                document.querySelector('#transcriptTitle').textContent = `Transcript for "${titleData.title}"`;
+                document.title = `Transcript - ${titleData.title}`;
+
+                // Load the transcript
+                const response = await fetch(`/transcript/${timestamp}`);
+                const text = await response.text();
+                document.querySelector('#transcriptContent div').textContent = text;
+            } catch (error) {
+                console.error('Error loading transcript:', error);
+                document.querySelector('#transcriptTitle').textContent = 'Error Loading Transcript';
+            }
+        }
+
+        function createTypingIndicator() {
+            const div = document.createElement('div');
+            div.className = 'flex justify-start';
+            div.innerHTML = `
+                <div class="chat-message rounded-lg px-4 py-2 bg-sand text-navy">
+                    <div class="typing-indicator">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function appendMessage(content, isUser) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `chat-message rounded-lg px-4 py-2 ${isUser ? 'bg-sage text-white' : 'bg-sand text-navy'}`;
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function typeMessage(text, isError = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex justify-start';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `chat-message rounded-lg px-4 py-2 ${isError ? 'bg-rust text-white' : 'bg-sand text-navy'}`;
+            messageDiv.appendChild(contentDiv);
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            let currentText = '';
+            const chars = text.split('');
+            
+            for (let i = 0; i < chars.length; i++) {
+                currentText += chars[i];
+                contentDiv.textContent = currentText;
+                
+                // Pause slightly longer at the end of sentences
+                if (chars[i].match(/[.!?]/) && i < chars.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 30));
+                }
+            }
+        }
+
+        async function sendMessage(message) {
+            try {
+                // Show typing indicator
+                const messagesDiv = document.getElementById('chatMessages');
+                const typingIndicator = createTypingIndicator();
+                messagesDiv.appendChild(typingIndicator);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+                // Get transcript content
+                const transcriptContent = document.querySelector('#transcriptContent div').textContent;
+
+                // Send message to server
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message,
+                        context: transcriptContent
+                    })
+                });
+
+                // Remove typing indicator
+                typingIndicator.remove();
+
+                if (!response.ok) {
+                    throw new Error('Failed to get response');
+                }
+
+                const data = await response.json();
+                await typeMessage(data.response);
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                const typingIndicator = document.querySelector('.typing-indicator')?.parentElement?.parentElement;
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                await typeMessage('Sorry, there was an error sending your message.', true);
+            }
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                // Show user message immediately
+                const messagesDiv = document.getElementById('chatMessages');
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.className = 'flex justify-end';
+                userMessageDiv.innerHTML = `
+                    <div class="chat-message rounded-lg px-4 py-2 bg-sage text-white">
+                        ${message}
+                    </div>
+                `;
+                messagesDiv.appendChild(userMessageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                
+                // Clear input
+                input.value = '';
+                
+                try {
+                    // Show typing indicator
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'flex justify-start';
+                    typingDiv.innerHTML = `
+                        <div class="chat-message rounded-lg px-4 py-2 bg-sand text-navy">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    `;
+                    messagesDiv.appendChild(typingDiv);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+                    // Send request to server
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            context: document.querySelector('#transcriptContent div').textContent
+                        })
+                    });
+                    
+                    // Remove typing indicator
+                    typingDiv.remove();
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Type out the response with animation
+                        await typeMessage(data.response, false);
+                    } else {
+                        // Type out error message with animation
+                        await typeMessage('Error: ' + (data.error || 'Failed to get response'), true);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    const typingIndicator = document.querySelector('.typing-indicator')?.parentElement?.parentElement;
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+                    // Type out error message with animation
+                    await typeMessage('Error: Could not connect to server', true);
+                }
+            }
+        });
+
+        loadTranscript();
+    </script>
+</body>
+</html>

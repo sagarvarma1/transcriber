@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Audio Transcriber</title>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FAF7F2',
+                        sage: '#8B9D83',
+                        navy: '#2C3E50',
+                        sand: '#E5DED6',
+                        rust: '#9B4B3F'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Libre Baskerville', serif;
+            background-color: #FAF7F2;
+        }
+        
+        .input-field {
+            border: 1px solid #E5DED6;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #8B9D83;
+            box-shadow: 0 0 0 3px rgba(139, 157, 131, 0.2);
+        }
+        
+        .login-button {
+            background-color: #8B9D83;
+            transition: all 0.3s ease;
+        }
+        
+        .login-button:hover {
+            background-color: #7A8B73;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full p-8">
+        <div class="bg-white rounded-xl shadow-md p-8 space-y-6">
+            <h1 class="text-3xl font-bold text-center text-navy mb-8">Audio Transcriber</h1>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-navy mb-2">Username</label>
+                    <input type="text" 
+                           id="username" 
+                           class="input-field w-full px-4 py-2 rounded-lg"
+                           required>
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-navy mb-2">Password</label>
+                    <input type="password" 
+                           id="password" 
+                           class="input-field w-full px-4 py-2 rounded-lg"
+                           required>
+                </div>
+                
+                <div id="errorMessage" class="text-rust text-center hidden"></div>
+                
+                <button type="submit" 
+                        class="login-button w-full text-white py-2 rounded-lg mt-6">
+                    Login
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const errorDiv = document.getElementById('errorMessage');
+                    errorDiv.textContent = data.error;
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
